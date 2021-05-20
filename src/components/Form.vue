@@ -30,13 +30,13 @@
       </div>
       <div class="form-row p-2">
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" v-model="showExchangeRate" id="showExchange" :disabled="this.recordList.length>1">
+          <input class="form-check-input" type="checkbox" v-model="showExchangeRate" id="showExchange" :disabled="(this.recordList.length+this.dkRecordsList.length)>1">
           <label class="form-check-label" for="showExchange">
             Wpłata w innej walucie
           </label>
         </div>
       </div>
-      <div v-if="showExchangeRate && this.recordList.length <= 1">
+      <div v-if="showExchangeRate">
         <div class="form-row p-2">
           <div class="form-group col">
             <label for="currency">Waluta</label>
@@ -63,10 +63,10 @@
             <label for="exchangeDate">Kurs dla przeliczania EUR</label>
           </div>
           <div class="form-group col">
-            <input class="form-control" type="date" id="exchangeDate" v-model="exchangeRateDate">
+            <input class="form-control" type="date" id="exchangeDate" v-model="exchangeRateDate" disabled>
           </div>
           <div class="form-group col">
-            <input class="form-control" type="number" id="exchangeRate" v-model="exchangeRate">
+            <input class="form-control" type="number" id="exchangeRate" v-model="exchangeRate" disabled>
           </div>
         </div>
 
@@ -137,14 +137,14 @@ export default {
     updateTotalAmount(){
       if(this.curr != this.documentsCurr){
         if(this.curr == "EUR"){
-          this.paymentAmount = this.amountInOtherCurr*this.exchangeRate;
+          this.paymentAmount = parseFloat(this.amountInOtherCurr*this.exchangeRate).toFixed(2);
         }
         else{
-          this.paymentAmount = this.amountInOtherCurr/this.exchangeRate;
+          this.paymentAmount = parseFloat(this.amountInOtherCurr/this.exchangeRate).toFixed(2);
         }
       }
       else{
-         this.paymentAmount = this.amountInOtherCurr;
+         this.paymentAmount = parseFloat(this.amountInOtherCurr).toFixed(2);
       }
     },
     settlementDocuments(){
@@ -161,13 +161,13 @@ export default {
       console.log("DK2 - " + (this.totalAmountFromDK*2))
 
       if(this.totalAmountFromDK < this.totalAmountFromFV){
-        this.paymentAmount += (this.totalAmountFromDK*2);
+        this.paymentAmount =  parseFloat(this.paymentAmount) + (this.totalAmountFromDK*2);
         console.log(this.paymentAmount);
         this.dkRecordsList.forEach(element => this.updateDocuments(element));
         this.recordList.forEach(element => this.updateDocuments(element));
       }
       else{
-        this.paymentAmount += (this.totalAmountFromFV + this.totalAmountFromDK);
+        this.paymentAmount = parseFloat(this.paymentAmount) + (this.totalAmountFromFV + this.totalAmountFromDK);
         console.log(this.paymentAmount);
         this.recordList.forEach(element => this.updateDocuments(element));
         this.dkRecordsList.forEach(element => this.updateDocuments(element));
@@ -238,14 +238,14 @@ export default {
         
         if(this.paymentAmount < amount){
           console.log("Nie wystarczyło")
-            amount = this.paymentAmount;
+            amount = parseFloat(this.paymentAmount).toFixed(2);
             this.paymentAmount = 0;
         }
         else{
           console.log("Wystarczyło")
           if(this.endMessage == "Żaden z wybranych dokumentów nie został całkowicie opłacony")
             this.endMessage = "Te dokumenty zostały całkowicie opłacone: <br/>";
-          this.paymentAmount -= amount;
+          this.paymentAmount = parseFloat(this.paymentAmount).toFixed(2) - amount;
           this.endMessage += (element['Name'] + "<br/>");
         }
         console.log(this.paymentAmount)
@@ -291,21 +291,21 @@ export default {
           apiData.set(dateFieldName, this.paymentDate);
           apiData.set(commentFieldName, this.comments);	
           apiData.set(paymentMehodFieldName, this.selectedPaymentMethod);
-        //   let config = {
-        //     Entity:"Dokumenty_ksi_gowe",
-        //     APIData:Object.fromEntries(apiData),
-        //     Trigger:["workflow"]
-        //   }
-        //   console.log("Update")
-        //   let test = await ZOHO.CRM.API.updateRecord(config);
-        //   console.log(test)
+          let config = {
+            Entity:"Dokumenty_ksi_gowe",
+            APIData:Object.fromEntries(apiData),
+            Trigger:["workflow"]
+          }
+          console.log("Update")
+          let test = await ZOHO.CRM.API.updateRecord(config);
+          console.log(test)
         }
       }
     },
     compare(a, b) {
-      if (a['Termin_platnosci_w_dniach'] < b['Termin_platnosci_w_dniach'])
+      if (a['Data_platnosci'] < b['Data_platnosci'])
           return -1
-      if (a['Termin_platnosci_w_dniach'] > b['Termin_platnosci_w_dniach'])
+      if (a['Data_platnosci'] > b['Data_platnosci'])
           return 1
       return 0
     }
