@@ -284,12 +284,16 @@ export default {
           let checkbox = "Przelew_cz_ciowy_nr_"+paymentNumber;
           let dateFieldName = "Data_zap_aty_nr_"+paymentNumber;
           let commentFieldName = "Szczeg_y_przelewu_cz_ciowego_"+paymentNumber;
-
+          let fullComment;
+          if(this.curr != this.documentsCurr) 
+            fullComment = "Wpłata w innej walucie: " + this.amountInOtherCurr + " " + this.curr  + ". Uwagi: " + (this.comments === "" ? "brak": this.comments);
+          else
+            fullComment = "Uwagi: " + (this.comments === "" ? "brak": this.comments);
           apiData.set(fieldName, amount);
           apiData.set(checkbox, true);
           apiData.set('id', element['id']);
           apiData.set(dateFieldName, this.paymentDate);
-          apiData.set(commentFieldName, this.comments);	
+          apiData.set(commentFieldName, fullComment);	
           apiData.set(paymentMehodFieldName, this.selectedPaymentMethod);
           let config = {
             Entity:"Dokumenty_ksi_gowe",
